@@ -3,9 +3,8 @@ from __future__ import annotations
 import typer
 import uvicorn
 
+from .auth import AuthManager
 from .config import Settings
-from .oauth import OAuthError, OpenAICodexOAuth
-from .token_store import TokenStore
 
 
 app = typer.Typer(help="Local OpenAI-compatible proxy backed by ChatGPT/Codex OAuth.")
@@ -13,35 +12,33 @@ app = typer.Typer(help="Local OpenAI-compatible proxy backed by ChatGPT/Codex OA
 
 @app.command()
 def login(no_browser: bool = typer.Option(False, "--no-browser", help="Print the auth URL instead of opening it.")) -> None:
-    oauth = OpenAICodexOAuth(settings=Settings.from_env())
-    oauth.login_browser(open_browser=not no_browser)
+    AuthManager(settings=Settings.from_env()).login(open_browser=not no_browser)
     typer.echo("Logged in.")
 
 
 @app.command()
 def status() -> None:
-    tokens = TokenStore(Settings.from_env().auth_dir).load()
-    if not tokens:
+    auth_status = AuthManager(settings=Settings.from_env()).status()
+    if not auth_status.logged_in:
         typer.echo("Not logged in.")
         raise typer.Exit(code=1)
-    state = "expired" if tokens.expired else "valid"
-    account = f" account_id={tokens.account_id}" if tokens.account_id else ""
+    state = "expired" if auth_status.expired else "valid"
+    account = f" account_id={auth_status.account_id}" if auth_status.account_id else ""
     typer.echo(f"Logged in: {state}{account}")
 
 
 @app.command()
 def logout() -> None:
-    TokenStore(Settings.from_env().auth_dir).clear()
+    AuthManager(settings=Settings.from_env()).logout()
     typer.echo("Logged out.")
 
 
 @app.command()
 def doctor() -> None:
-    settings = Settings.from_env()
-    tokens = TokenStore(settings.auth_dir).load()
-    typer.echo(f"auth_dir={settings.auth_dir}")
-    typer.echo(f"server=http://{settings.host}:{settings.port}")
-    typer.echo(f"logged_in={tokens is not None}")
+    info = AuthManager(settings=Settings.from_env()).doctor()
+    typer.echo(f"auth_dir={info['auth_dir']}")
+    typer.echo(f"server={info['server']}")
+    typer.echo(f"logged_in={info['logged_in']}")
 
 
 @app.command()

@@ -51,6 +51,30 @@ openai-auth-proxy doctor
 openai-auth-proxy serve --host 127.0.0.1 --port 1456
 ```
 
+## App-Facing Auth API
+
+Apps can use the package auth API directly instead of shelling out to the `openai-auth-proxy` binary.
+
+```python
+from openai_auth_proxy.auth import login, status
+
+auth = status()
+if not auth.logged_in:
+    login(open_browser=True)
+```
+
+For more control, use `AuthManager`:
+
+```python
+from openai_auth_proxy.auth import AuthManager
+
+auth = AuthManager()
+print(auth.status())
+auth.login(open_browser=True)
+```
+
+The app-facing auth API is for login/status/logout orchestration. Apps should still send model traffic to the local proxy server instead of reading or using OAuth tokens directly.
+
 ## Container Usage
 
 Use host login and container serve as the default container workflow. This keeps browser OAuth simple while still isolating app access behind the proxy.
