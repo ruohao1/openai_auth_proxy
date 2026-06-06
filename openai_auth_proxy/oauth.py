@@ -31,7 +31,7 @@ class OAuthError(RuntimeError):
 class OpenAICodexOAuth:
     def __init__(self, *, settings: Settings | None = None, token_store: TokenStore | None = None) -> None:
         self.settings = settings or Settings.from_env()
-        self.token_store = token_store or TokenStore(self.settings.auth_dir)
+        self.token_store = token_store or TokenStore(self.settings.auth_path)
         self._refresh_lock = asyncio.Lock()
 
     @property

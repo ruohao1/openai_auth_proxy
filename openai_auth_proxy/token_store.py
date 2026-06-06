@@ -10,9 +10,9 @@ from .types import OAuthTokens
 
 
 class TokenStore:
-    def __init__(self, auth_dir: Path | None = None) -> None:
-        self.auth_dir = auth_dir or Settings.from_env().auth_dir
-        self.path = self.auth_dir / "openai_auth.json"
+    def __init__(self, auth_path: Path | None = None) -> None:
+        self.path = auth_path or Settings.from_env().auth_path
+        self.auth_dir = self.path.parent
 
     def load(self) -> OAuthTokens | None:
         if not self.path.exists():

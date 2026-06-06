@@ -51,6 +51,18 @@ openai-auth-proxy doctor
 openai-auth-proxy serve --host 127.0.0.1 --port 1456
 ```
 
+By default, credentials are stored in the current project at:
+
+```text
+./.auth/openai_auth.json
+```
+
+Override the token file path with:
+
+```bash
+OPENAI_AUTH_PROXY_AUTH_PATH=/path/to/openai_auth.json openai-auth-proxy serve
+```
+
 ## App-Facing Auth API
 
 Apps can use the package auth API directly instead of shelling out to the `openai-auth-proxy` binary.
@@ -80,21 +92,36 @@ The app-facing auth API is for login/status/logout orchestration. Apps should st
 Use host login and container serve as the default container workflow. This keeps browser OAuth simple while still isolating app access behind the proxy.
 
 ```bash
+mkdir -p .auth
 openai-auth-proxy login
-docker compose up --build
+docker build -t openai-auth-proxy:local /home/ruohao/projects/openai_auth
 ```
 
-The compose file mounts the host auth directory into the container:
-
-```yaml
-volumes:
-  - ${OPENAI_AUTH_PROXY_HOST_AUTH_DIR:-${HOME}/.local/share/openai-auth-proxy}:/auth
-```
-
-Override the host auth directory when needed:
+Run the container with the project auth file mounted:
 
 ```bash
-OPENAI_AUTH_PROXY_HOST_AUTH_DIR=/path/to/auth docker compose up --build
+docker run --rm \
+  --user "$(id -u):$(id -g)" \
+  -p 127.0.0.1:1456:1456 \
+  -e OPENAI_AUTH_PROXY_AUTH_PATH=/auth/openai_auth.json \
+  -v "$PWD/.auth/openai_auth.json:/auth/openai_auth.json" \
+  openai-auth-proxy:local
+```
+
+When using the package from another project, build the image from the canonical source and mount that project's auth file:
+
+```bash
+cd /path/to/your-project
+uv add --editable /home/ruohao/projects/openai_auth
+mkdir -p .auth
+uv run openai-auth-proxy login
+docker build -t openai-auth-proxy:local /home/ruohao/projects/openai_auth
+docker run --rm \
+  --user "$(id -u):$(id -g)" \
+  -p 127.0.0.1:1456:1456 \
+  -e OPENAI_AUTH_PROXY_AUTH_PATH=/auth/openai_auth.json \
+  -v "$PWD/.auth/openai_auth.json:/auth/openai_auth.json" \
+  openai-auth-proxy:local
 ```
 
 The proxy is published only on localhost:
@@ -117,7 +144,7 @@ llm = ChatOpenAI(
 
 ## Security
 
-OAuth credentials are stored outside app projects. Override the auth directory with `OPENAI_AUTH_PROXY_AUTH_DIR`.
+OAuth credentials are stored in `./.auth/openai_auth.json` by default. Add `.auth/` to app project `.gitignore` files. Override the token path with `OPENAI_AUTH_PROXY_AUTH_PATH`.
 
 The server binds to `127.0.0.1` by default. In Docker, the service binds to `0.0.0.0` inside the container but is published to `127.0.0.1` on the host.
 

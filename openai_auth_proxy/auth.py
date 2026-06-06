@@ -22,7 +22,7 @@ class AuthStatus:
 class AuthManager:
     def __init__(self, *, settings: Settings | None = None) -> None:
         self.settings = settings or Settings.from_env()
-        self.token_store = TokenStore(self.settings.auth_dir)
+        self.token_store = TokenStore(self.settings.auth_path)
         self.oauth = OpenAICodexOAuth(settings=self.settings, token_store=self.token_store)
 
     def login(self, *, open_browser: bool = True, timeout: float = 300.0) -> OAuthTokens:

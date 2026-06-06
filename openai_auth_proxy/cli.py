@@ -37,6 +37,7 @@ def logout() -> None:
 def doctor() -> None:
     info = AuthManager(settings=Settings.from_env()).doctor()
     typer.echo(f"auth_dir={info['auth_dir']}")
+    typer.echo(f"auth_path={info['token_path']}")
     typer.echo(f"server={info['server']}")
     typer.echo(f"logged_in={info['logged_in']}")
 

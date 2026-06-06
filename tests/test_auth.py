@@ -9,8 +9,9 @@ from openai_auth_proxy.types import OAuthTokens
 
 
 def test_auth_manager_status_and_logout(tmp_path):
-    settings = Settings(auth_dir=tmp_path)
-    store = TokenStore(tmp_path)
+    auth_path = tmp_path / "openai_auth.json"
+    settings = Settings(auth_path=auth_path)
+    store = TokenStore(auth_path)
     store.save(OAuthTokens("access", "refresh", time.time() + 3600, "acc"))
 
     manager = AuthManager(settings=settings)
@@ -20,15 +21,16 @@ def test_auth_manager_status_and_logout(tmp_path):
     assert auth_status.expired is False
     assert auth_status.account_id == "acc"
     assert auth_status.auth_dir == tmp_path
-    assert auth_status.token_path == tmp_path / "openai_auth.json"
+    assert auth_status.token_path == auth_path
 
     manager.logout()
     assert manager.status().logged_in is False
 
 
 def test_auth_convenience_functions(monkeypatch, tmp_path):
-    monkeypatch.setenv("OPENAI_AUTH_PROXY_AUTH_DIR", str(tmp_path))
-    TokenStore(tmp_path).save(OAuthTokens("access", "refresh", time.time() + 3600, "acc"))
+    auth_path = tmp_path / "token.json"
+    monkeypatch.setenv("OPENAI_AUTH_PROXY_AUTH_PATH", str(auth_path))
+    TokenStore(auth_path).save(OAuthTokens("access", "refresh", time.time() + 3600, "acc"))
 
     assert status().logged_in is True
     info = doctor()
@@ -40,7 +42,7 @@ def test_auth_convenience_functions(monkeypatch, tmp_path):
 
 
 def test_auth_login_delegates_to_oauth(monkeypatch, tmp_path):
-    settings = Settings(auth_dir=tmp_path)
+    settings = Settings(auth_path=tmp_path / "token.json")
     tokens = OAuthTokens("access", "refresh", time.time() + 3600, "acc")
     called = {}
 
@@ -57,9 +59,10 @@ def test_auth_login_delegates_to_oauth(monkeypatch, tmp_path):
 
 @pytest.mark.asyncio
 async def test_auth_manager_valid_tokens(tmp_path):
-    settings = Settings(auth_dir=tmp_path)
+    auth_path = tmp_path / "openai_auth.json"
+    settings = Settings(auth_path=auth_path)
     tokens = OAuthTokens("access", "refresh", time.time() + 3600, "acc")
-    TokenStore(tmp_path).save(tokens)
+    TokenStore(auth_path).save(tokens)
 
     manager = AuthManager(settings=settings)
 

@@ -5,13 +5,13 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-def default_auth_dir() -> Path:
-    return Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share")) / "openai-auth-proxy"
+def default_auth_path() -> Path:
+    return Path(".auth") / "openai_auth.json"
 
 
 @dataclass(frozen=True)
 class Settings:
-    auth_dir: Path = default_auth_dir()
+    auth_path: Path = default_auth_path()
     host: str = "127.0.0.1"
     port: int = 1456
     issuer: str = "https://auth.openai.com"
@@ -19,10 +19,20 @@ class Settings:
     timeout: float = 120.0
     event_retention: int = 500
 
+    @property
+    def auth_dir(self) -> Path:
+        return self.auth_path.parent
+
     @classmethod
     def from_env(cls) -> "Settings":
+        auth_path = os.environ.get("OPENAI_AUTH_PROXY_AUTH_PATH")
+        legacy_auth_dir = os.environ.get("OPENAI_AUTH_PROXY_AUTH_DIR")
         return cls(
-            auth_dir=Path(os.environ.get("OPENAI_AUTH_PROXY_AUTH_DIR", default_auth_dir())),
+            auth_path=Path(auth_path)
+            if auth_path
+            else Path(legacy_auth_dir) / "openai_auth.json"
+            if legacy_auth_dir
+            else default_auth_path(),
             host=os.environ.get("OPENAI_AUTH_PROXY_HOST", "127.0.0.1"),
             port=int(os.environ.get("OPENAI_AUTH_PROXY_PORT", "1456")),
             issuer=os.environ.get("OPENAI_AUTH_PROXY_ISSUER", "https://auth.openai.com"),
