@@ -1,0 +1,9 @@
+services:
+  openai-auth-proxy:
+    build: .
+    ports:
+      - "127.0.0.1:1456:1456"
+    environment:
+      OPENAI_AUTH_PROXY_AUTH_DIR: /auth
+    volumes:
+      - ${OPENAI_AUTH_PROXY_HOST_AUTH_DIR:-${HOME}/.local/share/openai-auth-proxy}:/auth

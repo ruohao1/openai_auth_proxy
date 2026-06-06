@@ -1,0 +1,33 @@
+[project]
+name = "openai-auth-proxy"
+version = "0.1.0"
+description = "Local OpenAI-compatible proxy backed by ChatGPT/Codex OAuth"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0",
+    "httpx>=0.27.0",
+    "pydantic>=2.8.0",
+    "typer>=0.12.0",
+    "uvicorn>=0.30.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]
+
+[project.scripts]
+openai-auth-proxy = "openai_auth_proxy.cli:app"
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["openai_auth_proxy*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
